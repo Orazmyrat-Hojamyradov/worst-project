@@ -757,3 +757,64 @@
   }
 }
 
+.starRating {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.star {
+  transition: all 0.2s ease;
+}
+
+.clickableStar:hover {
+  transform: scale(1.1);
+}
+
+.ratingText {
+  margin-left: 8px;
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.cardRating {
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+}
+
+.loadingRating {
+  color: #999;
+  font-size: 12px;
+}
+
+.noRating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.noRatingText {
+  font-size: 12px;
+  color: #999;
+}
+
+.modalRatingSection {
+  margin-top: 16px;
+}
+
+.ratingDisplay {
+  display: flex;
+  align-items: center;
+}
+
+.ratingInput {
+  text-align: left;
+}
+
+.ratePrompt {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}

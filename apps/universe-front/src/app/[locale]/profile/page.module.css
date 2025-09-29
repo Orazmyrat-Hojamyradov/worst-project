@@ -402,3 +402,79 @@
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   }
 }
+
+.photoActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.photoActionButton, .deletePhotoButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.photoActionButton {
+  background: #007bff;
+  color: white;
+  border: none;
+}
+
+.deletePhotoButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+}
+
+.dropZone {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+.dropZone.dragOver {
+  border-color: #007bff;
+  background-color: #f8f9fa;
+}
+
+.imagePreview img {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+}
+
+.uploadPrompt {
+  color: #666;
+}
+
+.fileTypes {
+  font-size: 12px;
+  color: #999;
+  margin-top: 8px;
+}
+
+.photoUploadContent {
+  padding: 20px;
+}
+
+.uploadButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.uploadButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}

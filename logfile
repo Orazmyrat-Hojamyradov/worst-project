@@ -10,3 +10,7 @@
 2025-09-23 22:27:54.740 +05 [14670] ERROR:  null value in column "userId" of relation "rating" violates not-null constraint
 2025-09-23 22:27:54.740 +05 [14670] DETAIL:  Failing row contains (2, null, null, 4).
 2025-09-23 22:27:54.740 +05 [14670] STATEMENT:  INSERT INTO "rating"("userId", "score", "universityId") VALUES (DEFAULT, DEFAULT, $1) RETURNING "id"
+2025-09-28 11:34:00.697 +05 [8202] LOG:  received smart shutdown request
+2025-09-28 11:34:00.700 +05 [8202] LOG:  background worker "logical replication launcher" (PID 8209) exited with exit code 1
+2025-09-28 11:34:00.701 +05 [8204] LOG:  shutting down
+2025-09-28 11:34:00.720 +05 [8202] LOG:  database system is shut down

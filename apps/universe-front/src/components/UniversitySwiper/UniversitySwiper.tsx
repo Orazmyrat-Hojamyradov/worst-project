@@ -6,9 +6,16 @@ import styles from "./UniversitySwiper.module.css";
 import UniversityCard from "../ui/UniversityCard/UniversityCard";
 import { useQuery } from "@tanstack/react-query";
 import { fetchData } from "@/api/api";
+import { useMemo } from "react";
 
 interface Props {
-  title: string
+  title: string;
+  leaderboards?: boolean;
+}
+
+interface RankingData {
+  universityId: number;
+  avg: string;
 }
 
 export const universities = [
@@ -62,19 +69,44 @@ export const universities = [
   },
 ];
 
-export default function UniversitySwiper({ title }: Props) {
+export default function UniversitySwiper({ title, leaderboards = false }: Props) {
 
-  const { data } = useQuery({
+  const { data: universitiesData } = useQuery({
     queryKey: ['universities'],
     queryFn: async () => await fetchData({ url: '/api/universities' })
-  })
+  });
 
-  console.log(data);
+  const { data: rankingData } = useQuery({
+    queryKey: ['ranking'],
+    queryFn: async () => await fetchData({ url: '/ranking' }),
+    enabled: leaderboards // Only fetch ranking data when leaderboards is true
+  });
+
+  const sortedUniversities = useMemo(() => {
+    if (!leaderboards || !universitiesData || !rankingData) {
+      return universitiesData;
+    }
+
+    // Create a map of universityId to rating for quick lookup
+    const ratingMap = new Map<number, number>();
+    rankingData.forEach((item: RankingData) => {
+      ratingMap.set(item.universityId, parseFloat(item.avg));
+    });
+
+    // Sort universities by rating (highest first)
+    return [...universitiesData].sort((a, b) => {
+      const ratingA = ratingMap.get(a.id) || 0;
+      const ratingB = ratingMap.get(b.id) || 0;
+      return ratingB - ratingA;
+    });
+  }, [leaderboards, universitiesData, rankingData]);
+
+  console.log('Universities data:', universitiesData);
+  console.log('Ranking data:', rankingData);
+  console.log('Sorted universities:', sortedUniversities);
   
-
   return (
     <div className="">
-
       <h2 className={styles.mainTitle}>{title}</h2>
     
       <Swiper
@@ -90,8 +122,8 @@ export default function UniversitySwiper({ title }: Props) {
         className={styles.swiper}
       >
         {/* @ts-expect-error bhccjqbevj */}
-        {data?.map((uni, i) => (
-          <SwiperSlide key={i}>
+        {sortedUniversities?.map((uni, i) => (
+          <SwiperSlide key={uni.id || i}>
             <UniversityCard uni={uni} />
           </SwiperSlide>
         ))}

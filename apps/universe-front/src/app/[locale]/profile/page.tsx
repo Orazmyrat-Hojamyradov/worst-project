@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from './page.module.css';
 import UniversityCard from '@/components/ui/UniversityCard/UniversityCard';
 import Cookies from 'js-cookie';
@@ -34,6 +34,156 @@ interface University {
   others_p: MultilingualField | null;
   officialLink: string;
 }
+
+// Photo Upload Modal Component
+interface PhotoUploadModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onUpload: (file: File) => void;
+  isUploading: boolean;
+}
+
+const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onUpload, 
+  isUploading 
+}) => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const t = useTranslations();
+
+  const handleFileSelect = (file: File) => {
+    if (file && file.type.startsWith('image/')) {
+      setSelectedFile(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const handleUpload = () => {
+    if (selectedFile) {
+      onUpload(selectedFile);
+    }
+  };
+
+  const handleClose = () => {
+    setSelectedFile(null);
+    setPreviewUrl('');
+    setDragOver(false);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    onClose();
+  };
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className={styles.modalOverlay}>
+      <div className={styles.modal}>
+        <div className={styles.modalHeader}>
+          <button 
+            className={styles.closeButton} 
+            onClick={handleClose}
+            type="button"
+            disabled={isUploading}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+        
+        <div className={styles.photoUploadContent}>
+          <div 
+            className={`${styles.dropZone} ${dragOver ? styles.dragOver : ''}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {previewUrl ? (
+              <div className={styles.imagePreview}>
+                <img src={previewUrl} alt="Preview" />
+                <p>{selectedFile?.name}</p>
+              </div>
+            ) : (
+              <div className={styles.uploadPrompt}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            )}
+          </div>
+          
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
+
+          <div className={styles.modalActions}>
+            <button 
+              type="button" 
+              className={styles.cancelButton}
+              onClick={handleClose}
+              disabled={isUploading}
+            >
+              {t('AdminUniversities.buttons.cancel') || 'Cancel'}
+            </button>
+            <button 
+              type="button" 
+              className={styles.uploadButton}
+              onClick={handleUpload}
+              disabled={!selectedFile || isUploading}
+            >
+              {isUploading ? (t('AdminUniversities.buttons.saving') || 'Uploading...') : (t('AdminUniversities.buttons.edit') || 'Upload')}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Edit Profile Modal Component
 interface EditProfileModalProps {
@@ -187,6 +337,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, pr
 
 const ProfilePage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
   const [favoriteUniversities, setFavoriteUniversities] = useState<University[]>([]);
   const [allUniversities, setAllUniversities] = useState<University[]>([]);
@@ -278,6 +429,9 @@ const ProfilePage = () => {
     enabled: !!token && isClient, // Only run if token exists and we're on client
   });
 
+  console.log(data);
+  
+
   // Mutation for updating profile
   const updateProfileMutation = useMutation({
     mutationFn: (updatedData: any) => 
@@ -296,12 +450,79 @@ const ProfilePage = () => {
     }
   });
 
+  // Mutation for uploading photo - FIXED TO ALIGN WITH BACKEND
+  const uploadPhotoMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file); // Backend expects 'file' field name
+      formData.append('id', data.id)
+      
+      // Debug: Log the FormData contents
+      console.log('Uploading file:', file.name, file.type, file.size);
+      console.log('FormData entries:', Array.from(formData.entries()));
+      
+      const response = await fetchData({ 
+        url: '/api/users/me/photo', 
+        token: token, 
+        method: 'PATCH', 
+        body: formData,
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      if (!response) {
+        throw new Error('Failed to upload photo');
+      }
+
+      return response;
+    },
+    onSuccess: (updatedProfile) => {
+      queryClient.setQueryData(['profileData'], updatedProfile);
+      setIsPhotoModalOpen(false);
+    },
+    onError: (error) => {
+      console.error('Error uploading photo:', error);
+    }
+  });
+
+  // Mutation for deleting photo
+  const deletePhotoMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetchData({ 
+        url: '/api/users/me/photo', 
+        token: token, 
+        method: 'DELETE'
+      });
+
+      if (!response) {
+        throw new Error('Failed to delete photo');
+      }
+
+      return response; // ✅ fetchData should already return parsed response
+    },
+    onSuccess: (updatedProfile) => {
+      queryClient.setQueryData(['profileData'], updatedProfile);
+    },
+    onError: (error) => {
+      console.error('Error deleting photo:', error);
+    }
+  });
+
   const handleEditProfile = () => {
     setIsEditModalOpen(true);
   };
 
   const handleSaveProfile = (updatedData: any) => {
     updateProfileMutation.mutate(updatedData);
+  };
+
+  const handleUploadPhoto = (file: File) => {
+    uploadPhotoMutation.mutate(file);
+  };
+
+  const handleDeletePhoto = () => {
+    if (window.confirm(t('confirmDeletePhoto') || 'Are you sure you want to delete your profile photo?')) {
+      deletePhotoMutation.mutate();
+    }
   };
 
   const handleNavigate = (path: string) => {
@@ -357,10 +578,14 @@ const ProfilePage = () => {
         <div className={styles.coverPhoto}>
           <div className={styles.profileImageContainer}>
             <div className={styles.profileImage}>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="8" r="4" fill="currentColor"/>
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="currentColor"/>
-              </svg>
+              {data?.photo ? (
+                <img src={data.photo} alt="Profile" />
+              ) : (
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="8" r="4" fill="currentColor"/>
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="currentColor"/>
+                </svg>
+              )}
             </div>
           </div>
         </div>
@@ -377,6 +602,33 @@ const ProfilePage = () => {
           >
             {updateProfileMutation.isPending ? t('saving') : t('editProfile')}
           </button>
+          <div className={styles.photoActions}>
+              <button 
+                className={styles.photoActionButton}
+                onClick={() => setIsPhotoModalOpen(true)}
+                disabled={uploadPhotoMutation.isPending}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2" fill="none"/>
+                  <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="2" fill="none"/>
+                </svg>
+                {data?.photo ? 'Change' :  'Add Photo'}
+              </button>
+              {data?.photo && (
+                <button 
+                  className={styles.deletePhotoButton}
+                  onClick={handleDeletePhoto}
+                  disabled={deletePhotoMutation.isPending}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <line x1="10" y1="11" x2="10" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <line x1="14" y1="11" x2="14" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                  {deletePhotoMutation.isPending ? (t('deleting') || 'Deleting...') : (t('delete') || 'Delete')}
+                </button>
+              )}
+            </div>
         </div>
       </div>
 
@@ -419,6 +671,13 @@ const ProfilePage = () => {
         onClose={() => setIsEditModalOpen(false)}
         profileData={data}
         onSave={handleSaveProfile}
+      />
+
+      <PhotoUploadModal
+        isOpen={isPhotoModalOpen}
+        onClose={() => setIsPhotoModalOpen(false)}
+        onUpload={handleUploadPhoto}
+        isUploading={uploadPhotoMutation.isPending}
       />
     </div>
   );

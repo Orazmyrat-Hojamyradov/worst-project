@@ -7,7 +7,7 @@ function App() {
   return (
     <div className="app">
       <UniversitySwiper title={t('featuredUniversities')} />
-      <UniversitySwiper title={t('topUniversities')} />
+      <UniversitySwiper title={t('topUniversities')} leaderboards />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import Image from 'next/image';
 import ReactDOM from 'react-dom';
 import { useTranslations, useLocale } from 'next-intl';
 import Cookies from 'js-cookie'
+import { fetchData } from '@/api/api';
 
 interface MultilingualField {
   en: string;
@@ -33,6 +34,11 @@ interface University {
   rewards: MultilingualField | null;
   others_p: MultilingualField | null;
   officialLink: string;
+}
+
+interface RatingData {
+  universityId: number;
+  average: number;
 }
 
 interface Props {
@@ -124,6 +130,103 @@ export const isUserLoggedIn = (): boolean => {
   return !!getUserData();
 };
 
+// Rating API functions
+const fetchRating = async (universityId: number): Promise<RatingData | null> => {
+  try {
+    // const response = await fetch(`/api/universities/${universityId}/ratings/average`);
+    const response = await fetchData({ url: `/api/universities/${universityId}/ratings/average` });
+    console.log(" fetch rating:  ",response);
+    
+      if (!response) {
+        return null; // No ratings yet
+      throw new Error('Failed to fetch rating');
+    }
+    return await response;
+  } catch (error) {
+    console.error('Error fetching rating:', error);
+    return null;
+  }
+};
+
+const submitRating = async (universityId: number, score: number): Promise<boolean> => {
+  try {
+    const userData = getUserData();
+    if (!userData) {
+      throw new Error('User not logged in');
+    }
+
+    // const response = await fetch(`http://localhost:2040/api/universities/${universityId}/ratings`, {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify({
+    //     userId: userData.id,
+    //     score: score
+    //   })
+    // });
+
+    const response = await fetchData({ url: `/api/universities/${universityId}/ratings`, method: 'POST', body: { userId: userData.id, score: score } });
+
+    console.log("post rating: ", response);
+    
+    if (!response) {
+      throw new Error('Failed to submit rating');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error submitting rating:', error);
+    return false;
+  }
+};
+
+// Star Rating Component
+interface StarRatingProps {
+  rating: number;
+  onRate?: (rating: number) => void;
+  readonly?: boolean;
+  size?: number;
+}
+
+function StarRating({ rating, onRate, readonly = false, size = 20 }: StarRatingProps) {
+  const [hoverRating, setHoverRating] = React.useState(0);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  const handleStarClick = async (starRating: number) => {
+    if (readonly || isSubmitting || !onRate) return;
+    
+    setIsSubmitting(true);
+    await onRate(starRating);
+    setIsSubmitting(false);
+  };
+
+  const displayRating = readonly ? rating : (hoverRating || rating);
+
+  return (
+    <div className={styles.starRating} style={{ opacity: isSubmitting ? 0.5 : 1 }}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          size={size}
+          className={`${styles.star} ${!readonly ? styles.clickableStar : ''}`}
+          fill={star <= displayRating ? "#ffd700" : "none"}
+          stroke={star <= displayRating ? "#ffd700" : "#ccc"}
+          onMouseEnter={() => !readonly && setHoverRating(star)}
+          onMouseLeave={() => !readonly && setHoverRating(0)}
+          onClick={() => handleStarClick(star)}
+          style={{ cursor: readonly ? 'default' : 'pointer' }}
+        />
+      ))}
+      {readonly && rating > 0 && (
+        <span className={styles.ratingText}>
+          {rating.toFixed(1)}
+        </span>
+      )}
+    </div>
+  );
+}
+
 // Modal Component
 interface ModalProps {
   isOpen: boolean;
@@ -136,13 +239,36 @@ interface ModalProps {
 
 function UniversityModal({ isOpen, onClose, university, isFavorite, onToggleFavorite, isUserLoggedIn }: ModalProps) {
   const [mounted, setMounted] = React.useState(false);
+  const [rating, setRating] = React.useState<number>(0);
+  const [hasRated, setHasRated] = React.useState(false);
+  const [isLoadingRating, setIsLoadingRating] = React.useState(true);
   const t = useTranslations("UniversityCard.modal");
-  const locale = useLocale() as keyof MultilingualField; // Get current locale
+  const locale = useLocale() as keyof MultilingualField;
 
   React.useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
+
+  // Fetch rating when modal opens
+  React.useEffect(() => {
+    if (isOpen) {
+      loadRating();
+    }
+  }, [isOpen, university.id]);
+
+  const loadRating = async () => {
+    setIsLoadingRating(true);
+    const ratingData = await fetchRating(university.id);
+    if (ratingData) {
+      setRating(ratingData.average);
+      setHasRated(true);
+    } else {
+      setRating(0);
+      setHasRated(false);
+    }
+    setIsLoadingRating(false);
+  };
 
   if (!isOpen || !mounted) return null;
 
@@ -163,6 +289,26 @@ function UniversityModal({ isOpen, onClose, university, isFavorite, onToggleFavo
       return;
     }
     onToggleFavorite();
+  };
+
+  const handleRating = async (newRating: number) => {
+    if (!isUserLoggedIn) {
+      const proceed = window.confirm(t('authPrompt'));
+      if (proceed) {
+        window.location.href = '/auth';
+      }
+      return;
+    }
+
+    const success = await submitRating(university.id, newRating);
+    if (success) {
+      setRating(newRating);
+      setHasRated(true);
+      // Optionally refresh the rating from server
+      setTimeout(loadRating, 500);
+    } else {
+      alert('Failed to submit rating. Please try again.');
+    }
   };
 
   const InfoSection = ({ title, value, icon: Icon }: { title: string; value: string | null; icon: any }) => {
@@ -201,6 +347,22 @@ function UniversityModal({ isOpen, onClose, university, isFavorite, onToggleFavo
             <div className={styles.headerInfo}>
               <h1>{getDisplayValue(university.name, locale)}</h1>
               <p className={styles.headerDescription}>{getDisplayValue(university.description, locale)}</p>
+              
+              {/* Rating in modal header */}
+              <div className={styles.modalRatingSection}>
+                {isLoadingRating ? (
+                  <div className={styles.loadingRating}>Loading rating...</div>
+                ) : hasRated ? (
+                  <div className={styles.ratingDisplay}>
+                    <StarRating rating={rating} onRate={handleRating} size={24} />
+                  </div>
+                ) : (
+                  <div className={styles.ratingInput}>
+                    <p className={styles.ratePrompt}>Rate this university:</p>
+                    <StarRating rating={0} onRate={handleRating} size={24} />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           
@@ -327,13 +489,33 @@ export default function UniversityCard({ uni, onToggleFavorite }: Props) {
   });
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [isUserLoggedIn, setIsUserLoggedIn] = React.useState(false);
+  const [rating, setRating] = React.useState<number>(0);
+  const [hasRating, setHasRating] = React.useState(false);
+  const [isLoadingRating, setIsLoadingRating] = React.useState(true);
   const t = useTranslations("UniversityCard");
-  const locale = useLocale() as keyof MultilingualField; // Get current locale
+  const locale = useLocale() as keyof MultilingualField;
 
   React.useEffect(() => {
     setLocalIsFavorite(isFavoriteUniversity(uni.id));
     setIsUserLoggedIn(!!getUserData());
+    loadCardRating();
   }, [uni.id]);
+
+  // Load rating for the card
+  const loadCardRating = async () => {
+    setIsLoadingRating(true);
+    const ratingData = await fetchRating(uni.id);
+    console.log("id: ", uni.id, "rating: ",ratingData);
+    
+    if (ratingData) {
+      setRating(ratingData.average);
+      setHasRating(true);
+    } else {
+      setRating(0);
+      setHasRating(false);
+    }
+    setIsLoadingRating(false);
+  };
 
   // Listen for storage changes to update login status and favorites
   React.useEffect(() => {
@@ -438,6 +620,20 @@ export default function UniversityCard({ uni, onToggleFavorite }: Props) {
         <div className={styles.cardBody}>
           <h3 className={styles.title}>{getDisplayValue(uni.name, locale)}</h3>
           <p className={styles.description}>{getDisplayValue(uni.description, locale)}</p>
+
+          {/* Rating display on card */}
+          <div className={styles.cardRating}>
+            {isLoadingRating ? (
+              <div className={styles.loadingRating}>...</div>
+            ) : hasRating ? (
+              <StarRating rating={rating} readonly size={16} />
+            ) : (
+              <div className={styles.noRating}>
+                <Star size={16} stroke="#ccc" fill="none" />
+                <span className={styles.noRatingText}>No ratings yet</span>
+              </div>
+            )}
+          </div>
 
           <div className={styles.actions}>
             <Link 

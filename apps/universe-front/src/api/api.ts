@@ -3,15 +3,15 @@
 const API_BASE_URL = 'http://localhost:2040';
 
 // eslint-disable-next-line
-export async function fetchData({ method ="GET", url, token, body }: { method?: string, url: string, token?: string, body?: any }) {
+export async function fetchData({ method ="GET", url, token, body, headers }: { method?: string, url: string, token?: string, body?: any, headers?: any }) {
   try {
     // const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzMjIyMTNlNy1kMzFhLTRkMTEtYjdiYi03NDNhNTk3MmMzMTMiLCJlbWFpbCI6ImFsaWVAZXhhbXBsZS5jb20iLCJyb2xlIjoidXNlciIsImlhdCI6MTc1ODUyMTE4MywiZXhwIjoxNzU4NTIyMDgzfQ.kNaL7OP5WdeD2sFFLm-8VdM38aI2iUoZelhrmUMhtss'
     const response = await fetch(API_BASE_URL + url, {
       method,
-      headers: {
+      headers: !headers ?  {
         "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json"
-      },
+      } : { ...headers, "Authorization": `Bearer ${token}` },
       body: body ? JSON.stringify(body) : null
     });
 
