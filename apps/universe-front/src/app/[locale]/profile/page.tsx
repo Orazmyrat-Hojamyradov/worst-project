@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchData } from '@/api/api';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { Dog, Cat, PersonStanding, RectangleCircle, LucidePoundSterling, ShieldQuestionMark } from "lucide-react"
 
 interface MultilingualField {
   en: string;
@@ -35,83 +36,36 @@ interface University {
   officialLink: string;
 }
 
-// Photo Upload Modal Component
-interface PhotoUploadModalProps {
+// Profile Icons Array
+const PROFILE_ICONS = [
+    { id: "Dog" },
+    { id: "Cat" },
+    { id: "PersonStanding" },
+    { id: "RectangleCircle" },
+    { id: "LucidePoundSterling" }, 
+    { id: "ShieldQuestionMark" }
+  ];
+
+// Icon Selector Modal Component
+interface IconSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpload: (file: File) => void;
-  isUploading: boolean;
+  onSelect: (iconId: string) => void;
+  currentIconId?: string;
 }
 
-const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ 
+const IconSelectorModal: React.FC<IconSelectorModalProps> = ({ 
   isOpen, 
   onClose, 
-  onUpload, 
-  isUploading 
+  onSelect,
+  currentIconId 
 }) => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>('');
-  const [dragOver, setDragOver] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const t = useTranslations();
 
-  const handleFileSelect = (file: File) => {
-    if (file && file.type.startsWith('image/')) {
-      setSelectedFile(file);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFileSelect(file);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      handleFileSelect(file);
-    }
-  };
-
-  const handleUpload = () => {
-    if (selectedFile) {
-      onUpload(selectedFile);
-    }
-  };
-
-  const handleClose = () => {
-    setSelectedFile(null);
-    setPreviewUrl('');
-    setDragOver(false);
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
+  const handleSelect = (iconId: string) => {
+    onSelect(iconId);
     onClose();
   };
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
 
   if (!isOpen) return null;
 
@@ -119,11 +73,11 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({
     <div className={styles.modalOverlay}>
       <div className={styles.modal}>
         <div className={styles.modalHeader}>
+          <h2>Choose Profile Icon</h2>
           <button 
             className={styles.closeButton} 
-            onClick={handleClose}
+            onClick={onClose}
             type="button"
-            disabled={isUploading}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -131,61 +85,32 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({
           </button>
         </div>
         
-        <div className={styles.photoUploadContent}>
-          <div 
-            className={`${styles.dropZone} ${dragOver ? styles.dragOver : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {previewUrl ? (
-              <div className={styles.imagePreview}>
-                <img src={previewUrl} alt="Preview" />
-                <p>{selectedFile?.name}</p>
-              </div>
-            ) : (
-              <div className={styles.uploadPrompt}>
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-            )}
-          </div>
-          
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            style={{ display: 'none' }}
-          />
-
-          <div className={styles.modalActions}>
-            <button 
-              type="button" 
-              className={styles.cancelButton}
-              onClick={handleClose}
-              disabled={isUploading}
+        <div className={styles.iconGrid}>
+          {PROFILE_ICONS.map((icon) => (
+            <button
+              key={icon.id}
+              className={`${styles.iconOption} ${currentIconId === icon.id ? styles.iconSelected : ''}`}
+              onClick={() => handleSelect(icon.id)}
+              type="button"
             >
-              {t('AdminUniversities.buttons.cancel') || 'Cancel'}
+              <div 
+                className={styles.iconPreview}
+              >
+                {icon.id === "Dog" && <Dog size={48} />}
+                {icon.id === "Cat" && <Cat size={48} />}
+                {icon.id === "PersonStanding" && <PersonStanding size={48} />}
+                {icon.id === "RectangleCircle" && <RectangleCircle size={48} />}
+                {icon.id === "LucidePoundSterling" && <LucidePoundSterling size={48} />}
+                {icon.id === "ShieldQuestionMark" && <ShieldQuestionMark size={48} />}
+              </div>
             </button>
-            <button 
-              type="button" 
-              className={styles.uploadButton}
-              onClick={handleUpload}
-              disabled={!selectedFile || isUploading}
-            >
-              {isUploading ? (t('AdminUniversities.buttons.saving') || 'Uploading...') : (t('AdminUniversities.buttons.edit') || 'Upload')}
-            </button>
-          </div>
+          ))}
         </div>
       </div>
     </div>
   );
 };
 
-// Edit Profile Modal Component
 interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -203,7 +128,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, pr
   const t = useTranslations("ProfilePage.editModal");
   const [isMounted, setIsMounted] = useState(false);
 
-  // Ensure we only set form data after mount to avoid hydration mismatches
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -338,6 +262,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, pr
 const ProfilePage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+  const [selectedIconId, setSelectedIconId] = useState<string>('default');
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
   const [favoriteUniversities, setFavoriteUniversities] = useState<University[]>([]);
   const [allUniversities, setAllUniversities] = useState<University[]>([]);
@@ -349,9 +275,15 @@ const ProfilePage = () => {
   const locale = useLocale();
   const router = useRouter();
 
-  // Set client-side flag
+  // Set client-side flag and load saved icon
   useEffect(() => {
     setIsClient(true);
+    
+    // Load saved icon from localStorage
+    const savedIconId = localStorage.getItem('profile_icon');
+    if (savedIconId && PROFILE_ICONS.find(icon => icon.id === savedIconId)) {
+      setSelectedIconId(savedIconId);
+    }
   }, []);
 
   // Fetch all universities to match with favorite IDs
@@ -426,11 +358,10 @@ const ProfilePage = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['profileData'],
     queryFn: () => fetchData({ url: '/api/users/me', token: token }),
-    enabled: !!token && isClient, // Only run if token exists and we're on client
+    enabled: !!token && isClient,
   });
 
   console.log(data);
-  
 
   // Mutation for updating profile
   const updateProfileMutation = useMutation({
@@ -450,14 +381,13 @@ const ProfilePage = () => {
     }
   });
 
-  // Mutation for uploading photo - FIXED TO ALIGN WITH BACKEND
+  // Mutation for uploading photo
   const uploadPhotoMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
-      formData.append('file', file); // Backend expects 'file' field name
+      formData.append('file', file);
       formData.append('id', data.id)
       
-      // Debug: Log the FormData contents
       console.log('Uploading file:', file.name, file.type, file.size);
       console.log('FormData entries:', Array.from(formData.entries()));
       
@@ -497,7 +427,7 @@ const ProfilePage = () => {
         throw new Error('Failed to delete photo');
       }
 
-      return response; // ✅ fetchData should already return parsed response
+      return response;
     },
     onSuccess: (updatedProfile) => {
       queryClient.setQueryData(['profileData'], updatedProfile);
@@ -525,6 +455,15 @@ const ProfilePage = () => {
     }
   };
 
+  const handleSelectIcon = (iconId: string) => {
+    setSelectedIconId(iconId);
+    localStorage.setItem('profile_icon', iconId);
+  };
+
+  const getSelectedIcon = () => {
+    return PROFILE_ICONS.find(icon => icon.id === selectedIconId) || PROFILE_ICONS[0];
+  };
+
   const handleNavigate = (path: string) => {
     router.push(path);
   };
@@ -535,7 +474,6 @@ const ProfilePage = () => {
     return field[lang] || field.en || '';
   };
 
-  // Show loading state only on client to avoid hydration mismatch
   if (!isClient) {
     return (
       <div className={styles.container}>
@@ -580,11 +518,14 @@ const ProfilePage = () => {
             <div className={styles.profileImage}>
               {data?.photo ? (
                 <img src={data.photo} alt="Profile" />
-              ) : (
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="8" r="4" fill="currentColor"/>
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="currentColor"/>
-                </svg>
+              ) : (getSelectedIcon().id === "Dog" ? <Dog size={64} /> :
+                  getSelectedIcon().id === "Cat" ? <Cat size={64} /> :
+                  getSelectedIcon().id === "PersonStanding" ? <PersonStanding size={64} /> :
+                  getSelectedIcon().id === "RectangleCircle" ? <RectangleCircle size={64} /> :
+                  getSelectedIcon().id === "LucidePoundSterling" ? <LucidePoundSterling size={64} /> :
+                  getSelectedIcon().id === "ShieldQuestionMark" ? <ShieldQuestionMark size={64} /> :
+                  <Dog size={64} />
+
               )}
             </div>
           </div>
@@ -603,32 +544,31 @@ const ProfilePage = () => {
             {updateProfileMutation.isPending ? t('saving') : t('editProfile')}
           </button>
           <div className={styles.photoActions}>
-              <button 
-                className={styles.photoActionButton}
-                onClick={() => setIsPhotoModalOpen(true)}
-                disabled={uploadPhotoMutation.isPending}
+            <button 
+                className={styles.changeIconButton}
+                onClick={() => setIsIconModalOpen(true)}
+                title="Change Icon"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2" fill="none"/>
-                  <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="2" fill="none"/>
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                {data?.photo ? 'Change' :  'Add Photo'}
               </button>
-              {data?.photo && (
-                <button 
-                  className={styles.deletePhotoButton}
-                  onClick={handleDeletePhoto}
-                  disabled={deletePhotoMutation.isPending}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <line x1="10" y1="11" x2="10" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    <line x1="14" y1="11" x2="14" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                  {deletePhotoMutation.isPending ? (t('deleting') || 'Deleting...') : (t('delete') || 'Delete')}
-                </button>
-              )}
-            </div>
+            {data?.photo && (
+              <button 
+                className={styles.deletePhotoButton}
+                onClick={handleDeletePhoto}
+                disabled={deletePhotoMutation.isPending}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <line x1="10" y1="11" x2="10" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  <line x1="14" y1="11" x2="14" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                {deletePhotoMutation.isPending ? (t('deleting') || 'Deleting...') : (t('delete') || 'Delete')}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -673,11 +613,11 @@ const ProfilePage = () => {
         onSave={handleSaveProfile}
       />
 
-      <PhotoUploadModal
-        isOpen={isPhotoModalOpen}
-        onClose={() => setIsPhotoModalOpen(false)}
-        onUpload={handleUploadPhoto}
-        isUploading={uploadPhotoMutation.isPending}
+      <IconSelectorModal
+        isOpen={isIconModalOpen}
+        onClose={() => setIsIconModalOpen(false)}
+        onSelect={handleSelectIcon}
+        currentIconId={selectedIconId}
       />
     </div>
   );

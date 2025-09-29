@@ -25,9 +25,10 @@
         "others_p": "Beýleki programma talablary",
         "medicine": "Saglyk goralgysy",
         "salary": "Maşg berilýärmi",
-        "domitory": "Otag hakynda maglumat",
+        "donitory": "Otag hakynda maglumat",
         "rewards": "Baýrak/stipendiýalar",
-        "officialLink": "Resmi programma çykgydy"
+        "officialLink": "Resmi programma çykgydy",
+        "photo": "Surat"
       },
       
       "placeholders": {
@@ -58,7 +59,8 @@
       "edit": "Redaktirle",
       "delete": "Poz",
       "visit": "Gör",
-      "saving": "Saklanýar..."
+      "saving": "Saklanýar...",
+      "chooseFile": "Surat saýlaň"
     },
     
     "table": {
@@ -71,7 +73,8 @@
         "duration": "Dowamlylyk",
         "deadline": "Möhlet",
         "website": "Web sahypa",
-        "actions": "Hereketler"
+        "actions": "Hereketler",
+        "photo": "Surat"
       },
       "noData": "Uniwersitetler tapylmady",
       "savingChanges": "Üýtgeşmeler saklanýar..."

@@ -7,3 +7,128 @@
   cursor: pointer;
   color: var(--text-color);
 }
+
+.container {
+  position: relative;
+  display: inline-block;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  justify-content: space-between;
+}
+
+.trigger:hover {
+  border-color: #cbd5e0;
+  background: #f7fafc;
+}
+
+.currentLanguage {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.arrow {
+  font-size: 10px;
+  transition: transform 0.2s ease;
+  color: #718096;
+}
+
+.arrowOpen {
+  transform: rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 50;
+  overflow: hidden;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.listItem {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.listItem:last-child {
+  border-bottom: none;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-align: left;
+}
+
+.option:hover {
+  background: #f7fafc;
+}
+
+.optionActive {
+  background: #ebf8ff;
+  color: #2b6cb0;
+}
+
+.icon {
+  font-size: 16px;
+}
+
+.label {
+  font-weight: 500;
+  color: #2d3748;
+}
+
+.optionLabel {
+  color: #4a5568;
+  font-weight: 400;
+}
+
+.option:hover .optionLabel {
+  color: #2d3748;
+}
+
+/* Close dropdown when clicking outside */
+.container:focus-within .dropdown {
+  display: block;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .trigger {
+    min-width: 100px;
+    padding: 6px 10px;
+  }
+  
+  .option {
+    padding: 10px 12px;
+  }
+}

@@ -27,7 +27,7 @@ interface University {
   others: MultilingualField | null;
   medicine: MultilingualField | null;
   salary: MultilingualField | null;
-  donitory: MultilingualField | null; // Fixed spelling from "domitory" to "donitory"
+  donitory: MultilingualField | null;
   rewards: MultilingualField | null;
   others_p: MultilingualField | null;
   officialLink: string;
@@ -75,47 +75,93 @@ export default function AdminUniversitiesPage() {
   const user = userData ? JSON.parse(userData) : null
   const locale = useLocale()
 
-  // Create mutation - send data without id
-  const createMutation = useMutation({
-    mutationFn: async (newUniversity: CreateUniversity) => {
-      // Convert empty strings to null for nullable fields before sending
-      const processedData = {
-        ...newUniversity,
-        photolr1: newUniversity.photolr1 === "" ? null : newUniversity.photolr1,
-        applicationDeadline: newUniversity.applicationDeadline === "" ? null : newUniversity.applicationDeadline,
-      };
-      
-      return await fetchData({ 
-        url: '/api/universities', 
-        method: 'POST',
-        body: processedData
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['universities'] });
-    },
-  });
+  // File upload state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // Update mutation
-  const updateMutation = useMutation({
-    mutationFn: async (updatedUniversity: University) => {
-      // Convert empty strings to null for nullable fields before sending
-      const processedData = {
-        ...updatedUniversity,
-        photolr1: updatedUniversity.photolr1 === "" ? null : updatedUniversity.photolr1,
-        applicationDeadline: updatedUniversity.applicationDeadline === "" ? null : updatedUniversity.applicationDeadline,
-      };
+// In your AdminUniversitiesPage component, update the mutations:
+
+// Create mutation - send data without id
+const createMutation = useMutation({
+  mutationFn: async (newUniversity: CreateUniversity) => {
+    let photoUrl = newUniversity.photolr1;
+    
+    // If there's a selected file, upload it first
+    if (selectedFile) {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
       
-      return await fetchData({ 
-        url: `/api/universities/${updatedUniversity.id}`, 
-        method: 'PUT',
-        body: processedData
+      const uploadResponse = await fetchData({ 
+        url: '/api/upload', 
+        method: 'POST',
+        body: formData
       });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['universities'] });
-    },
-  });
+      
+      photoUrl = uploadResponse.url;
+    }
+    
+    const processedData = {
+      ...newUniversity,
+      photo: photoUrl === "" ? null : photoUrl, // Change photolr1 to photo
+      applicationDeadline: newUniversity.applicationDeadline === "" ? null : newUniversity.applicationDeadline,
+    };
+    
+    // Remove photolr1 from the data since we're using photo now
+    const { photolr1, ...dataToSend } = processedData;
+    
+    return await fetchData({ 
+      url: '/api/universities', 
+      method: 'POST',
+      body: dataToSend,
+      token: user?.token
+    });
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['universities'] });
+    resetFileInput();
+  },
+});
+
+// Update mutation
+const updateMutation = useMutation({
+  mutationFn: async (updatedUniversity: University) => {
+    let photoUrl = updatedUniversity.photolr1;
+    
+    // If there's a selected file, upload it first
+    if (selectedFile) {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      
+      const uploadResponse = await fetchData({ 
+        url: '/api/universities/' + updatedUniversity.id + '/photo', 
+        method: 'POST',
+        body: formData
+      });
+      
+      photoUrl = uploadResponse.url;
+    }
+    
+    const processedData = {
+      ...updatedUniversity,
+      photo: photoUrl === "" ? null : photoUrl, // Change photolr1 to photo
+      applicationDeadline: updatedUniversity.applicationDeadline === "" ? null : updatedUniversity.applicationDeadline,
+    };
+    
+    // Remove photolr1 from the data since we're using photo now
+    const { photolr1, ...dataToSend } = processedData;
+    
+    return await fetchData({ 
+      url: `/api/universities/${updatedUniversity.id}`, 
+      method: 'PUT',
+      body: dataToSend,
+      token: user?.token
+    });
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['universities'] });
+    resetFileInput();
+  },
+});
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -142,8 +188,37 @@ export default function AdminUniversitiesPage() {
   const [formData, setFormData] = useState<CreateUniversity>(initialFormData);
   const [editingUni, setEditingUni] = useState<University | null>(null);
 
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setSelectedFile(file);
+
+    // Create preview URL
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImagePreview(null);
+    }
+
+    // Also update formData for consistency
+    setFormData(prev => ({
+      ...prev,
+      photolr1: file ? URL.createObjectURL(file) : "" // Temporary local URL for preview
+    }));
+  };
+
+  // Reset file input
+  const resetFileInput = () => {
+    setSelectedFile(null);
+    setImagePreview(null);
+  };
+
   // Handle change for multilingual fields
-   const handleMultilingualChange = (
+  const handleMultilingualChange = (
     field: keyof CreateUniversity,
     lang: keyof MultilingualField,
     value: string
@@ -195,7 +270,7 @@ export default function AdminUniversitiesPage() {
         ...prev, 
         [name]: value === "" ? null : parseInt(value) || null
       }));
-    } else if (name === 'photolr1' || name === 'applicationDeadline' || name === 'officialLink') {
+    } else if (name === 'applicationDeadline' || name === 'officialLink') {
       setFormData(prev => ({ 
         ...prev, 
         [name]: value 
@@ -244,6 +319,14 @@ export default function AdminUniversitiesPage() {
       others_p: uni.others_p,
       officialLink: uni.officialLink,
     });
+    
+    // Set image preview if photo exists
+    if (uni.photolr1) {
+      setImagePreview(uni.photolr1);
+    } else {
+      setImagePreview(null);
+    }
+    setSelectedFile(null);
   };
 
   const handleDelete = async (id: number) => {
@@ -260,6 +343,7 @@ export default function AdminUniversitiesPage() {
   const resetForm = () => {
     setEditingUni(null);
     setFormData(initialFormData);
+    resetFileInput();
   };
 
   // Helper function to display multilingual values (show English by default)
@@ -274,17 +358,32 @@ export default function AdminUniversitiesPage() {
     return new Date(dateString).toLocaleDateString();
   };
 
-  if ( user?.role !== 'admin' ) {
-    return (
-      <div className={styles.container}>
-        <h1 className={styles.title}>{t('accessDenied')}</h1>
-        <p className={styles.error}>{t('noPermission')}</p>
-      </div>
-    );
+  const normalizeImageUrl = (url) => {
+  if (!url) return '';
+  
+  // If it's already an absolute URL (starts with http), return as is
+  if (url.startsWith('http')) {
+    return url;
   }
+  
+  // If it's a relative path, ensure it starts with /
+  return url.startsWith('/') ? url : `/${url}`;
+};
+
+  // if ( user?.role !== 'admin' ) {
+  //   return (
+  //     <div className={styles.container}>
+  //       <h1 className={styles.title}>{t('accessDenied')}</h1>
+  //       <p className={styles.error}>{t('noPermission')}</p>
+  //     </div>
+  //   );
+  // }
 
   // Check if any mutation is loading
   const isLoadingMutation = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+
+  console.log(apiData, 'API Data');
+  
 
   return (
     <div className={styles.container}>
@@ -304,6 +403,44 @@ export default function AdminUniversitiesPage() {
           <div className={styles.formSection}>
             <h3>{t('form.basicInfo')}</h3>
             
+            {/* Photo Upload */}
+            <div className={styles.photoUploadSection}>
+              <label>{t('form.fields.photo')} ({t('form.placeholders.optional')})</label>
+              <div className={styles.photoUploadContainer}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className={styles.fileInput}
+                  id="university-photo"
+                />
+                <label htmlFor="university-photo" className={styles.fileInputLabel}>
+                  {t('buttons.chooseFile')}
+                </label>
+                {selectedFile && (
+                  <span className={styles.fileName}>{selectedFile.name}</span>
+                )}
+              </div>
+              
+              {/* Image Preview */}
+              {(imagePreview || formData.photolr1) && (
+                <div className={styles.imagePreview}>
+                  <img 
+                    src={imagePreview || formData.photoUrl || ""} 
+                    alt="University preview" 
+                    className={styles.previewImage}
+                  />
+                  <button
+                    type="button"
+                    onClick={resetFileInput}
+                    className={styles.removeImageBtn}
+                  >
+                    {t('buttons.removeImage')}
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Name - Multilingual */}
             <div className={styles.multilingualGroup}>
               <label>{t('form.fields.name')} *</label>
@@ -361,17 +498,9 @@ export default function AdminUniversitiesPage() {
                 rows={2}
               />
             </div>
-
-            <input
-              type="text"
-              name="photolr1"
-              placeholder={`${t('form.fields.photoUrl')} (${t('form.placeholders.optional')})`}
-              value={formData.photolr1}
-              onChange={handleSimpleChange}
-              className={`${styles.input} ${styles.fullWidth}`}
-            />
           </div>
 
+          {/* ... Rest of the form sections remain the same ... */}
           {/* Program Details */}
           <div className={styles.formSection}>
             <h3>{t('form.programDetails')}</h3>
@@ -743,6 +872,7 @@ export default function AdminUniversitiesPage() {
           <thead>
             <tr>
               <th>{t('table.headers.id')}</th>
+              <th>{t('table.headers.photo')}</th>
               <th>{t('table.headers.name')}</th>
               <th>{t('table.headers.description')}</th>
               <th>{t('table.headers.specials')}</th>
@@ -757,14 +887,17 @@ export default function AdminUniversitiesPage() {
               <tr key={uni.id}>
                 <td>{uni.id}</td>
                 <td>
+                  {uni.photoUrl && (
+                    <img 
+                      onClick={() => console.log("http://localhost:2040", uni.photoUrl)}
+                      src={"../../../../../universe-back", uni.photoUrl} 
+                      alt={displayMultilingualValue(uni.name, locale as keyof MultilingualField)} 
+                      className={styles.photoThumbnail}
+                    />
+                  )}
+                </td>
+                <td>
                   <div className={styles.nameCell}>
-                    {uni.photolr1 && (
-                      <img 
-                        src={uni.photolr1} 
-                        alt={displayMultilingualValue(uni.name, locale as keyof MultilingualField)} 
-                        className={styles.photoThumbnail}
-                      />
-                    )}
                     <span>{displayMultilingualValue(uni.name, locale as keyof MultilingualField)}</span>
                   </div>
                 </td>

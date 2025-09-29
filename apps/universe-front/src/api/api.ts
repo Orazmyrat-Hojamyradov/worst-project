@@ -3,17 +3,49 @@
 const API_BASE_URL = 'http://localhost:2040';
 
 // eslint-disable-next-line
-export async function fetchData({ method ="GET", url, token, body, headers }: { method?: string, url: string, token?: string, body?: any, headers?: any }) {
+export async function fetchData({ 
+  method = "GET", 
+  url, 
+  token, 
+  body, 
+  headers 
+}: { 
+  method?: string; 
+  url: string; 
+  token?: string; 
+  body?: any; 
+  headers?: any;
+}) {
   try {
-    // const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzMjIyMTNlNy1kMzFhLTRkMTEtYjdiYi03NDNhNTk3MmMzMTMiLCJlbWFpbCI6ImFsaWVAZXhhbXBsZS5jb20iLCJyb2xlIjoidXNlciIsImlhdCI6MTc1ODUyMTE4MywiZXhwIjoxNzU4NTIyMDgzfQ.kNaL7OP5WdeD2sFFLm-8VdM38aI2iUoZelhrmUMhtss'
+    // Determine if we're sending FormData (for file uploads)
+    const isFormData = body instanceof FormData;
+    
+    // Prepare headers
+    const defaultHeaders: Record<string, string> = {
+      "Authorization": `Bearer ${token}`,
+    };
+    
+    // Only add Content-Type for JSON, not for FormData
+    if (!isFormData) {
+      defaultHeaders["Content-Type"] = "application/json";
+    }
+    
+    // Merge with custom headers
+    const finalHeaders = headers ? { ...defaultHeaders, ...headers } : defaultHeaders;
+    
+    // Prepare body - don't stringify FormData
+    const finalBody = body ? (isFormData ? body : JSON.stringify(body)) : null;
+    
     const response = await fetch(API_BASE_URL + url, {
       method,
-      headers: !headers ?  {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json"
-      } : { ...headers, "Authorization": `Bearer ${token}` },
-      body: body ? JSON.stringify(body) : null
+      headers: finalHeaders,
+      body: finalBody
     });
+
+    // Check if response is ok
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
     const data = await response.json();
     console.log(data);
@@ -21,7 +53,7 @@ export async function fetchData({ method ="GET", url, token, body, headers }: { 
     return data;
   } catch (error) {
     console.error("Fetch error:", error);
-    return null;
+    throw error; // Re-throw to handle in components
   }
 }
 
@@ -49,7 +81,7 @@ export async function Login({ payload }: { payload: { email: string; password: s
 
 export async function SignIn({ payload }: { payload: { email: string; password: string, name: string } }) {
   try {
-    const response = await fetch(API_BASE_URL + '/auth/register', {
+    const response = await fetch(API_BASE_URL + '/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

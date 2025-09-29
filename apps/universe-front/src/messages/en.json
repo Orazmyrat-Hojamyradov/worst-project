@@ -25,9 +25,10 @@
         "others_p": "Other Program Requirements",
         "medicine": "Medical Coverage",
         "salary": "Salary Provided",
-        "domitory": "Dormitory Information",
+        "donitory": "Dormitory Information",
         "rewards": "Rewards/Scholarships",
-        "officialLink": "Official Program Link"
+        "officialLink": "Official Program Link",
+        "photo": "Photo"
       },
       
       "placeholders": {
@@ -58,7 +59,8 @@
       "edit": "Edit",
       "delete": "Delete",
       "visit": "Visit",
-      "saving": "Saving..."
+      "saving": "Saving...",
+      "chooseFile": "Choose File"
     },
     
     "table": {
@@ -71,7 +73,8 @@
         "duration": "Duration",
         "deadline": "Deadline",
         "website": "Website",
-        "actions": "Actions"
+        "actions": "Actions",
+        "photo": "Photo"
       },
       "noData": "No universities found",
       "savingChanges": "Saving changes..."

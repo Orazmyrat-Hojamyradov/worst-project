@@ -334,3 +334,141 @@
 .multilingualGroup .textarea {
   margin-bottom: 0.5rem;
 }
+
+/* Add these styles to your existing CSS */
+
+.photoUploadSection {
+  margin-bottom: 1.5rem;
+}
+
+.photoUploadContainer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.fileInput {
+  display: none;
+}
+
+.fileInputLabel {
+  padding: 0.5rem 1rem;
+  background-color: #007bff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.fileInputLabel:hover {
+  background-color: #0056b3;
+}
+
+.fileName {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.imagePreview {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.previewImage {
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+}
+
+.removeImageBtn {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.removeImageBtn:hover {
+  background-color: #c82333;
+}
+
+.photoThumbnail {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+/* Add these styles to your existing CSS */
+
+.photoUploadSection {
+  margin-bottom: 1.5rem;
+}
+
+.photoUploadContainer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.fileInput {
+  display: none;
+}
+
+.fileInputLabel {
+  padding: 0.5rem 1rem;
+  background-color: #007bff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.fileInputLabel:hover {
+  background-color: #0056b3;
+}
+
+.fileName {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.imagePreview {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.previewImage {
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+}
+
+.removeImageBtn {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.removeImageBtn:hover {
+  background-color: #c82333;
+}
+
+.photoThumbnail {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+}

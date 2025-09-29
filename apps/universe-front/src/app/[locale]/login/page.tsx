@@ -35,27 +35,19 @@ export default function AuthPage() {
   useEffect(() => {
     const token = Cookies.get('auth_token');
     const userData = Cookies.get('user_data');
-    
+
     if (token && userData) {
-      setIsLoggedIn(true);
-      
-      // Optional: Validate token by making a quick API call
-      // or just redirect based on stored user data
       try {
         const user = JSON.parse(userData);
-        if (user.role === 'admin') {
-          router.push('/admin');
-        } else {
-          router.push('/profile');
-        }
-      } catch (err) {
-        // If user data is invalid, clear cookies and show login
+        if (user.role === 'admin') router.push('/admin');
+        else router.push('/profile');
+      } catch {
         Cookies.remove('auth_token');
         Cookies.remove('user_data');
-        setIsLoggedIn(false);
       }
     }
   }, [router]);
+
 
   const switchMode = () => {
     setIsLogin(!isLogin);
@@ -116,14 +108,21 @@ export default function AuthPage() {
         sameSite: 'strict'
       });
 
-      // Redirect based on role
-      if (user.role === 'admin') {
-        router.push('/admin');
-      } else {
-        router.push('/profile');
-      }
+      console.log("Login successful, cookies set");
+      console.log("Token:", response.access_token);
+      console.log("User:", user);
 
       setIsLoggedIn(true);
+
+      // Small delay to ensure cookies are set before redirect
+      setTimeout(() => {
+        // Redirect based on role
+        if (user.role === 'admin') {
+          window.location.href = '/admin';
+        } else {
+          window.location.href = '/profile';
+        }
+      }, 100);
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err?.response?.data?.message || err?.message || t('errors.generic'));
@@ -170,24 +169,33 @@ export default function AuthPage() {
       
       const response = await SignIn({ payload: signupPayload });
 
-      if (!response.ok) {
+      if (!response) {
         throw new Error(response.message || t('errors.registrationFailed'));
       }
 
       // Set cookies
-      Cookies.set('auth_token', response.token, {
+      Cookies.set('auth_token', response.access_token, {
+        expires: 365,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict'
       });
       
       Cookies.set('user_data', JSON.stringify(response.user || signupPayload), {
+        expires: 365,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict'
       });
 
-      // Redirect to profile
-      router.push('/profile');
+      console.log("Signup successful, cookies set");
+      console.log("Token:", response.token);
+      console.log("User:", response.user);
+
       setIsLoggedIn(true);
+
+      // Small delay to ensure cookies are set before redirect
+      setTimeout(() => {
+        window.location.href = '/profile';
+      }, 100);
     } catch (err: any) {
       console.error('Signup error:', err);
       setError(err?.response?.data?.message || err?.message || t('errors.generic'));
