@@ -9,9 +9,9 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-    prefix: '/uploads/',
-  });
+  // app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+  //   prefix: '/uploads/',
+  // });
 
   const config = new DocumentBuilder()
     .setTitle('University API')

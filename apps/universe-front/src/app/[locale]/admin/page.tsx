@@ -15,7 +15,7 @@ interface MultilingualField {
 
 interface University {
   id: number;
-  photolr1: string | null;
+  photoUrl: string | null;
   name: MultilingualField;
   description: MultilingualField;
   specials: MultilingualField | null;
@@ -43,7 +43,7 @@ const initialMultilingualField: MultilingualField = {
 };
 
 const initialFormData: CreateUniversity = {
-  photolr1: "",
+  photoUrl: "",
   name: initialMultilingualField,
   description: initialMultilingualField,
   specials: null,
@@ -70,6 +70,9 @@ export default function AdminUniversitiesPage() {
     queryFn: async () => await fetchData({ url: '/api/universities' })
   });
 
+  console.log(apiData);
+  
+
   const router = useRouter()
   const userData = Cookies.get('user_data')
   const user = userData ? JSON.parse(userData) : null
@@ -79,96 +82,89 @@ export default function AdminUniversitiesPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-// In your AdminUniversitiesPage component, update the mutations:
-
-// Create mutation - send data without id
-const createMutation = useMutation({
-  mutationFn: async (newUniversity: CreateUniversity) => {
-    let photoUrl = newUniversity.photolr1;
-    
-    // If there's a selected file, upload it first
-    if (selectedFile) {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
+  // Create mutation - send data without id
+  const createMutation = useMutation({
+    mutationFn: async (newUniversity: CreateUniversity) => {
+      let photoUrl = newUniversity.photoUrl;
       
-      const uploadResponse = await fetchData({ 
-        url: '/api/upload', 
+      // If there's a selected file, upload it to Next.js first
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const uploadData = await uploadResponse.json();
+        photoUrl = uploadData.url; // This will be like "/uploads/filename.jpg"
+      }
+      
+      const processedData = {
+        ...newUniversity,
+        photoUrl: photoUrl === "" ? null : photoUrl,
+        applicationDeadline: newUniversity.applicationDeadline === "" ? null : newUniversity.applicationDeadline,
+      };
+      
+      return await fetchData({ 
+        url: '/api/universities', 
         method: 'POST',
-        body: formData
+        body: processedData,
+        token: user?.token
       });
-      
-      photoUrl = uploadResponse.url;
-    }
-    
-    const processedData = {
-      ...newUniversity,
-      photo: photoUrl === "" ? null : photoUrl, // Change photolr1 to photo
-      applicationDeadline: newUniversity.applicationDeadline === "" ? null : newUniversity.applicationDeadline,
-    };
-    
-    // Remove photolr1 from the data since we're using photo now
-    const { photolr1, ...dataToSend } = processedData;
-    
-    return await fetchData({ 
-      url: '/api/universities', 
-      method: 'POST',
-      body: dataToSend,
-      token: user?.token
-    });
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['universities'] });
-    resetFileInput();
-  },
-});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['universities'] });
+      resetFileInput();
+    },
+  });
 
-// Update mutation
-const updateMutation = useMutation({
-  mutationFn: async (updatedUniversity: University) => {
-    let photoUrl = updatedUniversity.photolr1;
-    
-    // If there's a selected file, upload it first
-    if (selectedFile) {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: async (updatedUniversity: University) => {
+      let photoUrl = updatedUniversity.photoUrl;
       
-      const uploadResponse = await fetchData({ 
-        url: '/api/universities/' + updatedUniversity.id + '/photo', 
-        method: 'POST',
-        body: formData
+      // If there's a selected file, upload it to Next.js first
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const uploadData = await uploadResponse.json();
+        photoUrl = uploadData.url; // This will be like "/uploads/filename.jpg"
+      }
+      
+      const processedData = {
+        ...updatedUniversity,
+        photoUrl: photoUrl === "" ? null : photoUrl,
+        applicationDeadline: updatedUniversity.applicationDeadline === "" ? null : updatedUniversity.applicationDeadline,
+      };
+      
+      return await fetchData({ 
+        url: `/api/universities/${updatedUniversity.id}`, 
+        method: 'PUT',
+        body: processedData,
+        token: user?.token
       });
-      
-      photoUrl = uploadResponse.url;
-    }
-    
-    const processedData = {
-      ...updatedUniversity,
-      photo: photoUrl === "" ? null : photoUrl, // Change photolr1 to photo
-      applicationDeadline: updatedUniversity.applicationDeadline === "" ? null : updatedUniversity.applicationDeadline,
-    };
-    
-    // Remove photolr1 from the data since we're using photo now
-    const { photolr1, ...dataToSend } = processedData;
-    
-    return await fetchData({ 
-      url: `/api/universities/${updatedUniversity.id}`, 
-      method: 'PUT',
-      body: dataToSend,
-      token: user?.token
-    });
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['universities'] });
-    resetFileInput();
-  },
-});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['universities'] });
+      resetFileInput();
+    },
+  });
 
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
       return await fetchData({ 
         url: `/api/universities/${id}`, 
-        method: 'DELETE'
+        method: 'DELETE',
+        token: user?.token
       });
     },
     onSuccess: () => {
@@ -207,7 +203,7 @@ const updateMutation = useMutation({
     // Also update formData for consistency
     setFormData(prev => ({
       ...prev,
-      photolr1: file ? URL.createObjectURL(file) : "" // Temporary local URL for preview
+      photoUrl: file ? URL.createObjectURL(file) : "" // Temporary local URL for preview
     }));
   };
 
@@ -302,7 +298,7 @@ const updateMutation = useMutation({
   const handleEdit = (uni: University) => {
     setEditingUni(uni);
     setFormData({
-      photolr1: uni.photolr1 || "",
+      photoUrl: uni.photoUrl || "",
       name: uni.name,
       description: uni.description,
       specials: uni.specials,
@@ -321,8 +317,8 @@ const updateMutation = useMutation({
     });
     
     // Set image preview if photo exists
-    if (uni.photolr1) {
-      setImagePreview(uni.photolr1);
+    if (uni.photoUrl) {
+      setImagePreview(uni.photoUrl);
     } else {
       setImagePreview(null);
     }
@@ -358,17 +354,18 @@ const updateMutation = useMutation({
     return new Date(dateString).toLocaleDateString();
   };
 
-  const normalizeImageUrl = (url) => {
-  if (!url) return '';
-  
-  // If it's already an absolute URL (starts with http), return as is
-  if (url.startsWith('http')) {
-    return url;
-  }
-  
-  // If it's a relative path, ensure it starts with /
-  return url.startsWith('/') ? url : `/${url}`;
-};
+  // Fixed: Added proper type annotation
+  const normalizeImageUrl = (url: string | null): string => {
+    if (!url) return '';
+    
+    // If it's already an absolute URL (starts with http), return as is
+    if (url.startsWith('http')) {
+      return url;
+    }
+    
+    // If it's a relative path, ensure it starts with /
+    return url.startsWith('/') ? url : `/${url}`;
+  };
 
   // if ( user?.role !== 'admin' ) {
   //   return (
@@ -423,7 +420,7 @@ const updateMutation = useMutation({
               </div>
               
               {/* Image Preview */}
-              {(imagePreview || formData.photolr1) && (
+              {(imagePreview || formData.photoUrl) && (
                 <div className={styles.imagePreview}>
                   <img 
                     src={imagePreview || formData.photoUrl || ""} 
@@ -435,7 +432,7 @@ const updateMutation = useMutation({
                     onClick={resetFileInput}
                     className={styles.removeImageBtn}
                   >
-                    {t('buttons.removeImage')}
+                    {t('buttons.delete')}
                   </button>
                 </div>
               )}
@@ -500,7 +497,6 @@ const updateMutation = useMutation({
             </div>
           </div>
 
-          {/* ... Rest of the form sections remain the same ... */}
           {/* Program Details */}
           <div className={styles.formSection}>
             <h3>{t('form.programDetails')}</h3>
@@ -583,6 +579,7 @@ const updateMutation = useMutation({
               />
             </div>
 
+            <label>{t('form.fields.applicationDeadline')} ({t('form.placeholders.optional')})</label>
             <input
               type="date"
               name="applicationDeadline"
@@ -889,8 +886,7 @@ const updateMutation = useMutation({
                 <td>
                   {uni.photoUrl && (
                     <img 
-                      onClick={() => console.log("http://localhost:2040", uni.photoUrl)}
-                      src={"../../../../../universe-back", uni.photoUrl} 
+                      src={uni.photoUrl} 
                       alt={displayMultilingualValue(uni.name, locale as keyof MultilingualField)} 
                       className={styles.photoThumbnail}
                     />

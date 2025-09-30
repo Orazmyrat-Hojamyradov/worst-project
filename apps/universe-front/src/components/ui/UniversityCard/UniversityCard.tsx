@@ -9,6 +9,7 @@ import ReactDOM from 'react-dom';
 import { useTranslations, useLocale } from 'next-intl';
 import Cookies from 'js-cookie'
 import { fetchData } from '@/api/api';
+import { useRouter } from 'next/navigation';
 
 interface MultilingualField {
   en: string;
@@ -18,7 +19,7 @@ interface MultilingualField {
 
 interface University {
   id: number;
-  photolr1: string | null;
+  photoUrl: string | null;
   name: MultilingualField;
   description: MultilingualField;
   specials: MultilingualField | null;
@@ -244,6 +245,7 @@ function UniversityModal({ isOpen, onClose, university, isFavorite, onToggleFavo
   const [isLoadingRating, setIsLoadingRating] = React.useState(true);
   const t = useTranslations("UniversityCard.modal");
   const locale = useLocale() as keyof MultilingualField;
+  const router = useRouter()
 
   React.useEffect(() => {
     setMounted(true);
@@ -306,6 +308,7 @@ function UniversityModal({ isOpen, onClose, university, isFavorite, onToggleFavo
       setHasRated(true);
       // Optionally refresh the rating from server
       setTimeout(loadRating, 500);
+      location.reload()
     } else {
       alert('Failed to submit rating. Please try again.');
     }
@@ -333,9 +336,9 @@ function UniversityModal({ isOpen, onClose, university, isFavorite, onToggleFavo
         <div className={styles.fullScreenModalHeader}>
           <div className={styles.headerContent}>
             <div className={styles.headerImage}>
-              {university.photolr1 ? (
+              {university.photoUrl ? (
                 <Image 
-                  src={university.photolr1} 
+                  src={university.photoUrl} 
                   alt={getDisplayValue(university.name, locale)} 
                   fill 
                   style={{ objectFit: 'cover' }}
@@ -606,9 +609,9 @@ export default function UniversityCard({ uni, onToggleFavorite }: Props) {
     <>
       <div className={styles.card} onClick={handleCardClick}>
         <div className={styles.cardHeader}>
-          {uni.photolr1 ? (
+          {uni.photoUrl ? (
             <Image 
-              src={uni.photolr1} 
+              src={uni.photoUrl} 
               alt={getDisplayValue(uni.name, locale)} 
               fill 
               style={{ objectFit: 'cover' }}

@@ -48,7 +48,7 @@ export class UniversityController {
   @Post(':id/photo')
   @UseInterceptors(FileInterceptor('file', {
     storage: diskStorage({
-          destination: './uploads/universities',
+          destination: path.join(__dirname, '..', 'uploads/universities'),
           filename: (req, file, cb) => {
             const ext = path.extname(file.originalname);
             cb(null, `${Date.now()}${ext}`);
