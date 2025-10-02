@@ -593,7 +593,7 @@ const ProfilePage = () => {
                 </button>
               </div>
             ) : (
-              <div className={styles.universitiesGrid}>
+              <div className={styles.universitiesContainer}>
                 {favoriteUniversities.map((university: University) => (
                   <UniversityCard 
                     key={university.id} 
