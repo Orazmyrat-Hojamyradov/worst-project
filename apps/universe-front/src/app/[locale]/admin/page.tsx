@@ -367,14 +367,14 @@ export default function AdminUniversitiesPage() {
     return url.startsWith('/') ? url : `/${url}`;
   };
 
-  // if ( user?.role !== 'admin' ) {
-  //   return (
-  //     <div className={styles.container}>
-  //       <h1 className={styles.title}>{t('accessDenied')}</h1>
-  //       <p className={styles.error}>{t('noPermission')}</p>
-  //     </div>
-  //   );
-  // }
+  if ( user?.role !== 'admin' ) {
+    return (
+      <div className={styles.container}>
+        <h1 className={styles.title}>{t('accessDenied')}</h1>
+        <p className={styles.error}>{t('noPermission')}</p>
+      </div>
+    );
+  }
 
   // Check if any mutation is loading
   const isLoadingMutation = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
