@@ -20,7 +20,7 @@ import { RankingController } from './ranking/ranking.controller';
         type: 'postgres',
         host: config.get<string>('DATABASE_HOST', 'localhost'),
         port: parseInt(config.get<string>('DATABASE_PORT', '5432'), 10),
-        username: config.get<string>('DATABASE_USER', 'macbookair'),
+        username: config.get<string>('DATABASE_USER', 'postgres'),
         password: config.get<string>('DATABASE_PASSWORD', 'postgres'),
         database: config.get<string>('DATABASE_NAME', 'try-universe'),
         autoLoadEntities: true,

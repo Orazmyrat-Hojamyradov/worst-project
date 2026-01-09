@@ -134,7 +134,6 @@ export const isUserLoggedIn = (): boolean => {
 // Rating API functions
 const fetchRating = async (universityId: number): Promise<RatingData | null> => {
   try {
-    // const response = await fetch(`/api/universities/${universityId}/ratings/average`);
     const response = await fetchData({ url: `/api/universities/${universityId}/ratings/average` });
     console.log(" fetch rating:  ",response);
     
@@ -155,17 +154,6 @@ const submitRating = async (universityId: number, score: number): Promise<boolea
     if (!userData) {
       throw new Error('User not logged in');
     }
-
-    // const response = await fetch(`http://localhost:2040/api/universities/${universityId}/ratings`, {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     userId: userData.id,
-    //     score: score
-    //   })
-    // });
 
     const response = await fetchData({ url: `/api/universities/${universityId}/ratings`, method: 'POST', body: { userId: userData.id, score: score } });
 
@@ -228,7 +216,7 @@ function StarRating({ rating, onRate, readonly = false, size = 20 }: StarRatingP
   );
 }
 
-// Modal Component
+// Modal Component (unchanged, only showing the card part)
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -252,7 +240,6 @@ function UniversityModal({ isOpen, onClose, university, isFavorite, onToggleFavo
     return () => setMounted(false);
   }, []);
 
-  // Fetch rating when modal opens
   React.useEffect(() => {
     if (isOpen) {
       loadRating();
@@ -286,7 +273,7 @@ function UniversityModal({ isOpen, onClose, university, isFavorite, onToggleFavo
     if (!isUserLoggedIn) {
       const proceed = window.confirm(t('authPrompt'));
       if (proceed) {
-        window.location.href = '/auth';
+        window.location.href = '/login';
       }
       return;
     }
@@ -297,7 +284,7 @@ function UniversityModal({ isOpen, onClose, university, isFavorite, onToggleFavo
     if (!isUserLoggedIn) {
       const proceed = window.confirm(t('authPrompt'));
       if (proceed) {
-        window.location.href = '/auth';
+        window.location.href = '/login';
       }
       return;
     }
@@ -306,7 +293,6 @@ function UniversityModal({ isOpen, onClose, university, isFavorite, onToggleFavo
     if (success) {
       setRating(newRating);
       setHasRated(true);
-      // Optionally refresh the rating from server
       setTimeout(loadRating, 500);
       location.reload()
     } else {
@@ -314,11 +300,11 @@ function UniversityModal({ isOpen, onClose, university, isFavorite, onToggleFavo
     }
   };
 
-  const InfoSection = ({ title, value, icon: Icon }: { title: string; value: string | null; icon: any }) => {
+  const InfoSection = ({ title, value, icon: Icon, style }: { title: string; value: string | null; icon: any, style?: React.CSSProperties }) => {
     if (!value) return null;
     
     return (
-      <div className={styles.infoSection}>
+      <div className={styles.infoSection} style={{...style}}>
         <div className={styles.infoHeader}>
           <Icon size={24} />
           <h4>{title}</h4>
@@ -328,11 +314,9 @@ function UniversityModal({ isOpen, onClose, university, isFavorite, onToggleFavo
     );
   };
 
-  // Create portal content
   const modalContent = (
     <div className={styles.fullScreenModalOverlay} onClick={handleOverlayClick}>
       <div className={styles.fullScreenModalContent}>
-        {/* Header */}
         <div className={styles.fullScreenModalHeader}>
           <div className={styles.headerContent}>
             <div className={styles.headerImage}>
@@ -351,7 +335,6 @@ function UniversityModal({ isOpen, onClose, university, isFavorite, onToggleFavo
               <h1>{getDisplayValue(university.name, locale)}</h1>
               <p className={styles.headerDescription}>{getDisplayValue(university.description, locale)}</p>
               
-              {/* Rating in modal header */}
               <div className={styles.modalRatingSection}>
                 {isLoadingRating ? (
                   <div className={styles.loadingRating}>Loading rating...</div>
@@ -399,7 +382,6 @@ function UniversityModal({ isOpen, onClose, university, isFavorite, onToggleFavo
           </div>
         </div>
 
-        {/* Main Content */}
         <div className={styles.fullScreenModalBody}>
           <div className={styles.detailsGrid}>
             <InfoSection 
@@ -451,7 +433,7 @@ function UniversityModal({ isOpen, onClose, university, isFavorite, onToggleFavo
             />
             
             <InfoSection 
-              title={t('sections.dormitory')} 
+              title={t('sections.donitory')} 
               value={getDisplayValue(university.donitory, locale)} 
               icon={Home} 
             />
@@ -472,6 +454,7 @@ function UniversityModal({ isOpen, onClose, university, isFavorite, onToggleFavo
               title={t('sections.additionalDetails')} 
               value={getDisplayValue(university.others_p, locale)} 
               icon={Award} 
+              style={{ gridColumn: '1 / -1' }}
             />
           </div>
         </div>
@@ -479,7 +462,6 @@ function UniversityModal({ isOpen, onClose, university, isFavorite, onToggleFavo
     </div>
   );
 
-  // Render using portal to document.body
   return ReactDOM.createPortal(
     modalContent,
     document.body
@@ -504,7 +486,6 @@ export default function UniversityCard({ uni, onToggleFavorite }: Props) {
     loadCardRating();
   }, [uni.id]);
 
-  // Load rating for the card
   const loadCardRating = async () => {
     setIsLoadingRating(true);
     const ratingData = await fetchRating(uni.id);
@@ -520,7 +501,6 @@ export default function UniversityCard({ uni, onToggleFavorite }: Props) {
     setIsLoadingRating(false);
   };
 
-  // Listen for storage changes to update login status and favorites
   React.useEffect(() => {
     const handleStorageChange = () => {
       setIsUserLoggedIn(!!getUserData());
@@ -555,7 +535,6 @@ export default function UniversityCard({ uni, onToggleFavorite }: Props) {
     
     setLocalIsFavorite(newFavoriteStatus);
     
-    // Trigger storage event to update other components
     window.dispatchEvent(new Event('storage'));
     
     if (onToggleFavorite) {
@@ -584,7 +563,6 @@ export default function UniversityCard({ uni, onToggleFavorite }: Props) {
     
     setLocalIsFavorite(newFavoriteStatus);
     
-    // Trigger storage event to update other components
     window.dispatchEvent(new Event('storage'));
     
     if (onToggleFavorite) {
@@ -592,7 +570,6 @@ export default function UniversityCard({ uni, onToggleFavorite }: Props) {
     }
   };
 
-  // Prevent body scroll when modal is open
   React.useEffect(() => {
     if (isModalOpen) {
       document.body.style.overflow = 'hidden';
@@ -608,55 +585,136 @@ export default function UniversityCard({ uni, onToggleFavorite }: Props) {
   return (
     <>
       <div className={styles.card} onClick={handleCardClick}>
-        <div className={styles.cardHeader}>
+        {/* Enhanced Image Container with Gradient Overlay */}
+        <div className={styles.imageContainer}>
           {uni.photoUrl ? (
-            <Image 
-              src={uni.photoUrl} 
-              alt={getDisplayValue(uni.name, locale)} 
-              fill 
-              style={{ objectFit: 'cover' }}
-            />
+            <div className={styles.cardImageWrapper}>
+              <Image
+                src={uni.photoUrl}
+                alt={getDisplayValue(uni.name, locale)}
+                fill
+                style={{ objectFit: 'cover' }}
+                className={styles.cardImage}
+              />
+              <div className={styles.imageGradient} />
+            </div>
           ) : (
-            <Building size={48} />
+            <div className={styles.defaultImage}>
+              <Building size={64} className={styles.defaultIcon} />
+            </div>
           )}
-        </div>
-        <div className={styles.cardBody}>
-          <h3 className={styles.title}>{getDisplayValue(uni.name, locale)}</h3>
-          <p className={styles.description}>{getDisplayValue(uni.description, locale)}</p>
-
-          {/* Rating display on card */}
-          <div className={styles.cardRating}>
+          
+          {/* Favorite Badge */}
+          <button
+            className={`${styles.favoriteBadge} ${localIsFavorite ? styles.favoriteActive : ''}`}
+            onClick={handleToggleFavorite}
+            aria-label={localIsFavorite ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Heart 
+              size={20} 
+              fill={localIsFavorite ? '#ff0000' : 'rgba(255, 255, 255, 0.8)'} 
+              stroke={localIsFavorite ? '#ff0000' : 'rgba(255, 255, 255, 0.8)'}
+            />
+          </button>
+          
+          {/* Rating Badge */}
+          <div className={styles.ratingBadge}>
             {isLoadingRating ? (
-              <div className={styles.loadingRating}>...</div>
+              <span className={styles.loadingDot}>●</span>
             ) : hasRating ? (
-              <StarRating rating={rating} readonly size={16} />
+              <>
+                <Star size={14} fill="#ffd700" stroke="#ffd700" />
+                <span>{rating.toFixed(1)}</span>
+              </>
             ) : (
-              <div className={styles.noRating}>
-                <Star size={16} stroke="#ccc" fill="none" />
-                <span className={styles.noRatingText}>No ratings yet</span>
+              <span className={styles.noRatingText}>No ratings</span>
+            )}
+          </div>
+          
+          {/* University Name Overlay */}
+          <div className={styles.nameOverlay}>
+            <h3 className={styles.title}>
+              {getDisplayValue(uni.name, locale)}
+            </h3>
+          </div>
+        </div>
+
+        {/* Enhanced Card Body */}
+        <div className={styles.cardBody}>
+          {/* Description with gradient fade */}
+          <div className={styles.descriptionWrapper}>
+            <p className={styles.description}>
+              {getDisplayValue(uni.description, locale)}
+            </p>
+            <div className={styles.descriptionFade} />
+          </div>
+
+          {/* Quick Info Cards */}
+          <div className={styles.quickInfoGrid}>
+            {uni.specials && (
+              <div className={styles.infoCard}>
+                <Award size={16} className={styles.infoIcon} />
+                <div>
+                  <span className={styles.infoLabel}>Specializations</span>
+                  <span className={styles.infoValue}>{getDisplayValue(uni.specials, locale)}</span>
+                </div>
+              </div>
+            )}
+            
+            {uni.duration && (
+              <div className={styles.infoCard}>
+                <Calendar size={16} className={styles.infoIcon} />
+                <div>
+                  <span className={styles.infoLabel}>Duration</span>
+                  <span className={styles.infoValue}>{getDisplayValue(uni.duration, locale)}</span>
+                </div>
+              </div>
+            )}
+            
+            {uni.financing && (
+              <div className={styles.infoCard}>
+                <DollarSign size={16} className={styles.infoIcon} />
+                <div>
+                  <span className={styles.infoLabel}>Financing</span>
+                  <span className={styles.infoValue}>{getDisplayValue(uni.financing, locale)}</span>
+                </div>
               </div>
             )}
           </div>
 
-          <div className={styles.actions}>
-            <Link 
-              href={uni.officialLink} 
-              target="_blank" 
+          {/* Enhanced Tags */}
+          <div className={styles.tagsContainer}>
+            {uni.rewards && <span className={`${styles.tag} ${styles.tagScholarship}`}>🏆 Scholarship</span>}
+            {uni.medicine && <span className={`${styles.tag} ${styles.tagMedical}`}>🏥 Medical</span>}
+            {uni.salary && <span className={`${styles.tag} ${styles.tagSalary}`}>💼 Salary</span>}
+            {uni.donitory && <span className={`${styles.tag} ${styles.tagHousing}`}>🏠 Housing</span>}
+          </div>
+
+          {/* Action Buttons */}
+          <div className={styles.actionButtons}>
+            <Link
+              href={uni.officialLink}
+              target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className={styles.websiteLink}
+              className={styles.websiteButton}
             >
-              {t('visitWebsite')}
+              <span>Visit Website</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
             </Link>
-
-            <button
-              className={`${styles.likeBtn} ${localIsFavorite ? styles.liked : ""} ${!isUserLoggedIn ? styles.disabled : ""}`}
-              onClick={handleToggleFavorite}
-              title={isUserLoggedIn ? 
-                (localIsFavorite ? t('removeFavorite') : t('addFavorite')) : 
-                t('loginRequired')}
+            
+            <button 
+              className={styles.viewDetailsButton}
+              onClick={handleCardClick}
             >
-              <Heart size={18} fill={localIsFavorite ? "#ff0000" : "none"} />
+              <span>View Details</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
             </button>
           </div>
         </div>
