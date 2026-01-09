@@ -47,8 +47,9 @@ interface Props {
   onToggleFavorite?: () => void;
 }
 
-// Local storage key for favorites
+// Local storage keys
 const FAVORITES_KEY = 'university_favorites';
+const ANALYTICS_KEY = 'university_analytics';
 
 // Helper function to get user data
 const getUserData = () => {
@@ -58,6 +59,49 @@ const getUserData = () => {
   } catch (error) {
     console.error('Error reading user data:', error);
     return null;
+  }
+};
+
+// Analytics helper functions
+export const getAnalytics = (): Record<number, number> => {
+  try {
+    const stored = typeof window !== "undefined" && localStorage.getItem(ANALYTICS_KEY);
+    if (!stored) return {};
+    return JSON.parse(stored);
+  } catch (error) {
+    console.error('Error reading analytics from localStorage:', error);
+    return {};
+  }
+};
+
+export const trackUniversityClick = (universityId: number) => {
+  try {
+    const analytics = getAnalytics();
+    const currentCount = analytics[universityId] || 0;
+    analytics[universityId] = currentCount + 1;
+    localStorage.setItem(ANALYTICS_KEY, JSON.stringify(analytics));
+    console.log(`University ${universityId} clicked. Total clicks: ${analytics[universityId]}`);
+  } catch (error) {
+    console.error('Error tracking university click:', error);
+  }
+};
+
+export const getUniversityClicks = (universityId: number): number => {
+  try {
+    const analytics = getAnalytics();
+    return analytics[universityId] || 0;
+  } catch (error) {
+    console.error('Error getting university clicks:', error);
+    return 0;
+  }
+};
+
+export const clearAnalytics = () => {
+  try {
+    localStorage.removeItem(ANALYTICS_KEY);
+    console.log('Analytics cleared');
+  } catch (error) {
+    console.error('Error clearing analytics:', error);
   }
 };
 
@@ -543,6 +587,8 @@ export default function UniversityCard({ uni, onToggleFavorite }: Props) {
   };
 
   const handleCardClick = () => {
+    // Track analytics when card is clicked
+    trackUniversityClick(uni.id);
     setIsModalOpen(true);
   };
 

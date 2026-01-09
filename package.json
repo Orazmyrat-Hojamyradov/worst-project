@@ -22,6 +22,7 @@
     "packages/*"
   ],
   "dependencies": {
-    "next-intl": "^4.3.9"
+    "next-intl": "^4.3.9",
+    "recharts": "^3.6.0"
   }
 }

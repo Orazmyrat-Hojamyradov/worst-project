@@ -6,6 +6,7 @@ import { fetchData } from "@/api/api";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import Cookies from 'js-cookie'
+import Link from "next/link";
 
 interface MultilingualField {
   en: string;
@@ -385,6 +386,11 @@ export default function AdminUniversitiesPage() {
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>{t('title')}</h1>
+      <Link href="/analytics">
+        <button style={{ width: 90, height: 40, borderRadius: 16, background: 'whitesmoke',marginBottom: 12, color: 'black' }} >
+          Analytics
+        </button>
+      </Link>
 
       {isLoading && <div className={styles.loading}>{t('messages.loading')}</div>}
       {error && (
